@@ -5,12 +5,10 @@ Handles author formats:
   - 中文名=English Name   (most common)
   - 中文名 only
   - English Name only
-  - Mixed like "Hwang, Hong黃鴻"
 Output: author_keywords.csv
 """
 
 import csv
-import re
 from collections import defaultdict
 
 
@@ -25,13 +23,6 @@ def is_chinese_char(c: str) -> bool:
 
 def has_chinese(s: str) -> bool:
     return any(is_chinese_char(c) for c in s)
-
-
-def split_mixed(s: str) -> tuple[str, str]:
-    """Split a string like 'Hwang, Hong黃鴻' into (chinese_part, english_part)."""
-    zh = "".join(c for c in s if is_chinese_char(c))
-    en = re.sub(r'[一-鿿]', '', s).strip(" ,")
-    return zh, en
 
 
 def parse_author(raw: str) -> tuple[str, str, str]:
@@ -57,9 +48,7 @@ def parse_author(raw: str) -> tuple[str, str, str]:
         return (zh or en, zh, en)
 
     if has_chinese(raw):
-        zh, en = split_mixed(raw)
-        key = zh if zh else raw
-        return (key, zh or raw, en)
+        return (raw, raw, "")
 
     # Pure English
     return (raw, "", raw)

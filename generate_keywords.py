@@ -18,7 +18,7 @@ except ImportError:
     os.system(f"{sys.executable} -m pip install openai")
     from openai import OpenAI
 
-INPUT_FILE = "articles.csv"
+INPUT_FILE = "articles_updated.csv"
 OUTPUT_FILE = "articles_updated.csv"
 CHECKPOINT_FILE = "keywords_checkpoint.json"
 MODEL = "gpt-4o-mini"
@@ -140,6 +140,14 @@ def save_checkpoint(checkpoint: dict):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--rerun-all", action="store_true",
+        help="Ignore checkpoint and rerun all rows with empty keywords."
+    )
+    args = parser.parse_args()
+
     print(f"Reading {INPUT_FILE}...", flush=True)
     rows = []
     fieldnames = []
@@ -149,7 +157,7 @@ def main():
         for row in reader:
             rows.append(row)
 
-    checkpoint = load_checkpoint()
+    checkpoint = {} if args.rerun_all else load_checkpoint()
     print(f"Loaded checkpoint with {len(checkpoint)} cached entries.", flush=True)
 
     # Identify rows that need keywords
@@ -191,7 +199,7 @@ def main():
             rows[idx]["關鍵字"] = keywords
             checkpoint[str(idx)] = keywords
             title_preview = articles[batch_indices.index(idx)][0][:55]
-            print(f"[{idx}] {title_preview} → {keywords[:55]}", flush=True)
+            print(f"[{idx}] {title_preview} -> {keywords[:55]}", flush=True)
 
         processed += len(batch_indices)
 
