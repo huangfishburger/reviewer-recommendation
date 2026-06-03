@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Randomly pick one eligible F03 source paper and recommend authors by keywords.
+Pick one or more eligible F03 source papers and recommend authors by keywords.
 
 Criteria:
 1. source_paper.csv row has 來源文獻ID starting with F03
@@ -20,12 +20,17 @@ from pathlib import Path
 SOURCE_FILE = "source_paper.csv"
 ARTICLES_FILE = "articles_updated.csv"
 AUTHOR_KEYWORDS_FILE = "author_keywords.csv"
-OUTPUT_FILE = "sample_author_recommendations.json"
+OUTPUT_FILE = "20X20_author_recommendations.csv"
+JSON_OUTPUT_FILE = ""
 EMBEDDING_CACHE_FILE = "author_keyword_embeddings_cache.json"
-EMBEDDING_MODEL = "all-mpnet-base-v2"
+EMBEDDING_MODEL = "BAAI/bge-m3"
 KEYWORD_TOP_K = 30
 SIMILARITY_THRESHOLD = 0.55
 COOCCUR_BONUS = 0.2
+ABSTRACT_TOP_K = 3
+ABSTRACT_THRESHOLD = 0.45
+ABSTRACT_BATCH_SIZE = 8
+MAX_SEQ_LENGTH = 512
 
 
 def normalize_title(title: str) -> str:
@@ -130,6 +135,24 @@ def select_paper(matches: list[dict], paper_title: str | None, source_id: str | 
     return random.choice(matches)
 
 
+def select_papers(
+    matches: list[dict],
+    paper_title: str | None,
+    source_id: str | None,
+    count: int,
+) -> list[dict]:
+    if paper_title or source_id:
+        return [select_paper(matches, paper_title, source_id)]
+
+    if count <= 0:
+        raise SystemExit("--num-papers 必須大於 0。")
+
+    if count >= len(matches):
+        return list(matches)
+
+    return random.sample(matches, count)
+
+
 def read_author_keyword_rows(path: str) -> list[dict]:
     authors = []
 
@@ -171,6 +194,58 @@ def build_author_keyword_index(authors: list[dict]) -> tuple[list[str], dict[str
     return sorted(keyword_to_author_indexes), keyword_to_author_indexes
 
 
+def read_article_rows(path: str) -> list[dict]:
+    articles = []
+
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row_index, row in enumerate(reader):
+            title = normalize_title(row.get("主要篇名", ""))
+            abstract = (row.get("主要摘要") or "").strip()
+            author_field = (row.get("作者") or "").strip()
+            if not title or not abstract or not author_field:
+                continue
+
+            articles.append({
+                "article_index": row_index,
+                "title": title,
+                "english_title": (row.get("英文篇名") or "").strip(),
+                "authors": author_field,
+                "abstract": abstract,
+                "keywords": parse_pipe_field(row.get("關鍵字", "")),
+                "identities": parse_author_identities(author_field),
+            })
+
+    return articles
+
+
+def build_author_article_index(articles: list[dict]) -> dict[str, list[int]]:
+    identity_to_article_indexes = defaultdict(list)
+
+    for article_index, article in enumerate(articles):
+        for identity in article["identities"]:
+            identity_to_article_indexes[identity].append(article_index)
+
+    return identity_to_article_indexes
+
+
+def candidate_article_indexes_for_author(
+    author: dict,
+    articles: list[dict],
+    identity_to_article_indexes: dict[str, list[int]],
+    target_title: str,
+) -> list[int]:
+    article_indexes = set()
+
+    for identity in author["identities"]:
+        article_indexes.update(identity_to_article_indexes.get(identity, []))
+
+    return sorted(
+        article_index for article_index in article_indexes
+        if articles[article_index]["title"] != target_title
+    )
+
+
 def load_embedding_model(model: str):
     try:
         from sentence_transformers import SentenceTransformer
@@ -190,12 +265,6 @@ def import_numpy():
         raise SystemExit("找不到 numpy 套件，請先執行：python3 -m pip install numpy") from exc
 
     return np
-
-
-def vector_to_list(vector) -> list[float]:
-    if hasattr(vector, "tolist"):
-        vector = vector.tolist()
-    return [float(value) for value in vector]
 
 
 def normalize_matrix(vectors):
@@ -219,16 +288,18 @@ def cache_vector_path(cache_path: str) -> Path:
     return Path(cache_path).with_suffix(".npy")
 
 
-def load_or_create_keyword_embeddings(
-    keywords: list[str],
+def load_or_create_text_embeddings(
+    texts: list[str],
     embedding_model,
     model_name: str,
     cache_path: str,
     batch_size: int,
+    item_key: str,
+    item_label: str,
 ):
     """
-    Cache keyword embeddings as a binary matrix instead of JSON floats.
-    The JSON file stores metadata and keyword order; the .npy file stores vectors.
+    Cache text embeddings as a binary matrix instead of JSON floats.
+    The JSON file stores metadata and text order; the .npy file stores vectors.
     """
     np = import_numpy()
     meta_path = Path(cache_path)
@@ -238,13 +309,13 @@ def load_or_create_keyword_embeddings(
         with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
 
-        if meta.get("model") == model_name and meta.get("keywords") == keywords:
+        if meta.get("model") == model_name and meta.get(item_key) == texts:
             vectors = np.load(vector_path)
-            if vectors.shape[0] == len(keywords):
+            if vectors.shape[0] == len(texts):
                 return normalize_matrix(vectors)
 
-    print(f"Building keyword embeddings: {len(keywords)} keywords")
-    vectors = create_embeddings(embedding_model, keywords, batch_size=batch_size, progress=True)
+    print(f"Building {item_label} embeddings: {len(texts)} {item_label}s")
+    vectors = create_embeddings(embedding_model, texts, batch_size=batch_size, progress=True)
     np.save(vector_path, vectors)
 
     with open(meta_path, "w", encoding="utf-8") as f:
@@ -253,15 +324,33 @@ def load_or_create_keyword_embeddings(
                 "model": model_name,
                 "vector_file": vector_path.name,
                 "normalized": True,
-                "keywords": keywords,
+                item_key: texts,
             },
             f,
             ensure_ascii=False,
         )
 
-    print(f"Saved keyword embedding metadata: {meta_path}")
-    print(f"Saved keyword embedding matrix: {vector_path}")
+    print(f"Saved {item_label} embedding metadata: {meta_path}")
+    print(f"Saved {item_label} embedding matrix: {vector_path}")
     return vectors
+
+
+def load_or_create_keyword_embeddings(
+    keywords: list[str],
+    embedding_model,
+    model_name: str,
+    cache_path: str,
+    batch_size: int,
+):
+    return load_or_create_text_embeddings(
+        texts=keywords,
+        embedding_model=embedding_model,
+        model_name=model_name,
+        cache_path=cache_path,
+        batch_size=batch_size,
+        item_key="keywords",
+        item_label="keyword",
+    )
 
 
 def find_similar_author_keywords(
@@ -403,17 +492,282 @@ def recommend_authors_from_keyword_matches(
     )[:top_k]
 
 
+def attach_abstract_evidence(
+    recommendations: list[dict],
+    authors: list[dict],
+    articles: list[dict],
+    identity_to_article_indexes: dict[str, list[int]],
+    embedding_model,
+    target_title: str,
+    target_abstract: str,
+    abstract_top_k: int,
+    abstract_threshold: float,
+    abstract_batch_size: int,
+) -> list[dict]:
+    if not recommendations:
+        return recommendations
+
+    author_by_name = {
+        (author["author"], author["english_name"]): author
+        for author in authors
+    }
+
+    recommendation_article_indexes = {}
+    all_candidate_indexes = set()
+    for recommendation in recommendations:
+        author = author_by_name.get((
+            recommendation["author"],
+            recommendation["english_name"],
+        ))
+        if not author:
+            recommendation_article_indexes[id(recommendation)] = []
+            continue
+
+        article_indexes = candidate_article_indexes_for_author(
+            author=author,
+            articles=articles,
+            identity_to_article_indexes=identity_to_article_indexes,
+            target_title=target_title,
+        )
+        recommendation_article_indexes[id(recommendation)] = article_indexes
+        all_candidate_indexes.update(article_indexes)
+
+    if not all_candidate_indexes:
+        for recommendation in recommendations:
+            recommendation["abstract_score"] = 0.0
+            recommendation["abstract_matches"] = []
+        return recommendations
+
+    sorted_candidate_indexes = sorted(all_candidate_indexes)
+    target_vector = create_embeddings(
+        embedding_model=embedding_model,
+        texts=[target_abstract],
+        batch_size=1,
+        progress=False,
+    )[0]
+    candidate_vectors = create_embeddings(
+        embedding_model=embedding_model,
+        texts=[articles[index]["abstract"] for index in sorted_candidate_indexes],
+        batch_size=abstract_batch_size,
+        progress=False,
+    )
+    vector_by_article_index = {
+        article_index: candidate_vectors[offset]
+        for offset, article_index in enumerate(sorted_candidate_indexes)
+    }
+
+    for recommendation in recommendations:
+        matches = []
+        for article_index in recommendation_article_indexes.get(id(recommendation), []):
+            similarity = float(vector_by_article_index[article_index] @ target_vector)
+            if similarity < abstract_threshold:
+                continue
+
+            article = articles[article_index]
+            matches.append({
+                "title": article["title"],
+                "english_title": article["english_title"],
+                "authors": article["authors"],
+                "similarity": round(similarity, 6),
+                "keywords": article["keywords"],
+                "abstract": article["abstract"],
+            })
+
+        matches.sort(key=lambda item: -item["similarity"])
+        matches = matches[:abstract_top_k]
+        abstract_score = 0.0
+        if matches:
+            abstract_score = sum(match["similarity"] for match in matches) / len(matches)
+
+        recommendation["abstract_score"] = round(float(abstract_score), 6)
+        recommendation["abstract_matches"] = matches
+
+    return recommendations
+
+
+def recommend_for_paper(
+    sampled: dict,
+    args,
+    authors: list[dict],
+    author_keywords: list[str],
+    keyword_to_author_indexes: dict[str, list[int]],
+    author_keyword_vectors,
+    embedding_model,
+    articles: list[dict],
+    identity_to_article_indexes: dict[str, list[int]],
+) -> dict:
+    paper_keyword_vectors = create_embeddings(
+        embedding_model=embedding_model,
+        texts=sampled["關鍵字清單"],
+        batch_size=args.batch_size,
+        progress=False,
+    )
+
+    excluded_identities = set()
+    if not args.include_paper_authors:
+        excluded_identities = parse_author_identities(sampled.get("作者", ""))
+
+    matches_by_paper_keyword = find_similar_author_keywords(
+        paper_keywords=sampled["關鍵字清單"],
+        paper_vectors=paper_keyword_vectors,
+        author_keywords=author_keywords,
+        author_keyword_vectors=author_keyword_vectors,
+        keyword_top_k=args.keyword_top_k,
+        similarity_threshold=args.similarity_threshold,
+    )
+
+    recommendations = recommend_authors_from_keyword_matches(
+        authors=authors,
+        keyword_to_author_indexes=keyword_to_author_indexes,
+        matches_by_paper_keyword=matches_by_paper_keyword,
+        top_k=args.top_k,
+        excluded_identities=excluded_identities,
+        mode=args.score_mode,
+        cooccur_bonus=args.cooccur_bonus,
+    )
+
+    for recommendation in recommendations:
+        recommendation["keyword_score"] = recommendation["score"]
+        recommendation["final_score"] = recommendation["score"]
+
+    recommendations = attach_abstract_evidence(
+        recommendations=recommendations,
+        authors=authors,
+        articles=articles,
+        identity_to_article_indexes=identity_to_article_indexes,
+        embedding_model=embedding_model,
+        target_title=sampled["主要篇名"],
+        target_abstract=(sampled.get("主要摘要") or "").strip(),
+        abstract_top_k=args.abstract_top_k,
+        abstract_threshold=args.abstract_threshold,
+        abstract_batch_size=args.abstract_batch_size,
+    )
+
+    return {
+        "source_id": sampled["來源文獻ID"],
+        "title": sampled["主要篇名"],
+        "paper_authors": sampled.get("作者", ""),
+        "paper_abstract": (sampled.get("主要摘要") or "").strip(),
+        "keywords": sampled["關鍵字清單"],
+        "recommendations": recommendations,
+        "paper_keyword_matches": matches_by_paper_keyword,
+    }
+
+
+def format_keyword_matches(matches: list[dict], limit: int = 5) -> str:
+    return " | ".join(
+        f"{match['paper_keyword']}->{match['author_keyword']}({match['similarity']:.3f})"
+        for match in matches[:limit]
+    )
+
+
+def recommendation_csv_rows(results: list[dict], abstract_columns: int) -> list[dict]:
+    rows = []
+
+    for paper_rank, result in enumerate(results, 1):
+        for author_rank, recommendation in enumerate(result["recommendations"], 1):
+            row = {
+                "paper_rank": paper_rank,
+                "source_id": result["source_id"],
+                "paper_title": result["title"],
+                "paper_authors": result["paper_authors"],
+                "paper_abstract": result["paper_abstract"],
+                "paper_keywords": "|".join(result["keywords"]),
+                "recommended_rank": author_rank,
+                "author": recommendation["author"],
+                "english_name": recommendation["english_name"],
+                "keyword_score": recommendation["keyword_score"],
+                "abstract_score": recommendation["abstract_score"],
+                "final_score": recommendation["final_score"],
+                "source_keyword_hits": recommendation["source_keyword_hits"],
+                "exact_hits": recommendation["exact_hits"],
+                "similar_hits": recommendation["similar_hits"],
+                "author_article_count": recommendation["article_count"],
+                "author_keyword_count": recommendation["keyword_count"],
+                "matched_keywords": format_keyword_matches(recommendation["matched_keywords"]),
+                "author_keywords": "|".join(recommendation["author_keywords"]),
+            }
+
+            for index in range(abstract_columns):
+                prefix = f"abstract_{index + 1}"
+                match = (
+                    recommendation["abstract_matches"][index]
+                    if index < len(recommendation["abstract_matches"])
+                    else None
+                )
+                row[f"{prefix}_similarity"] = match["similarity"] if match else ""
+                row[f"{prefix}_title"] = match["title"] if match else ""
+                row[f"{prefix}_english_title"] = match["english_title"] if match else ""
+                row[f"{prefix}_authors"] = match["authors"] if match else ""
+                row[f"{prefix}_keywords"] = "|".join(match["keywords"]) if match else ""
+                row[f"{prefix}_abstract"] = match["abstract"] if match else ""
+
+            rows.append(row)
+
+    return rows
+
+
+def write_recommendations_csv(path: str, rows: list[dict], abstract_columns: int) -> None:
+    base_fields = [
+        "paper_rank",
+        "source_id",
+        "paper_title",
+        "paper_authors",
+        "paper_abstract",
+        "paper_keywords",
+        "recommended_rank",
+        "author",
+        "english_name",
+        "keyword_score",
+        "abstract_score",
+        "final_score",
+        "source_keyword_hits",
+        "exact_hits",
+        "similar_hits",
+        "author_article_count",
+        "author_keyword_count",
+        "matched_keywords",
+        "author_keywords",
+    ]
+    abstract_fields = []
+    for index in range(1, abstract_columns + 1):
+        abstract_fields.extend([
+            f"abstract_{index}_similarity",
+            f"abstract_{index}_title",
+            f"abstract_{index}_english_title",
+            f"abstract_{index}_authors",
+            f"abstract_{index}_keywords",
+            f"abstract_{index}_abstract",
+        ])
+
+    with open(path, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=base_fields + abstract_fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Filter F03 papers, randomly sample one, and recommend authors by keyword embeddings."
+        description="Filter F03 papers and recommend authors by keyword embeddings."
     )
     parser.add_argument("--source-file", default=SOURCE_FILE)
     parser.add_argument("--articles-file", default=ARTICLES_FILE)
     parser.add_argument("--author-file", default=AUTHOR_KEYWORDS_FILE)
     parser.add_argument("--output-file", default=OUTPUT_FILE)
+    parser.add_argument(
+        "--json-output-file",
+        default=JSON_OUTPUT_FILE,
+        help="Optional JSON output path. Leave empty to only write CSV.",
+    )
     parser.add_argument("--cache-file", default=EMBEDDING_CACHE_FILE)
     parser.add_argument("--model", default=EMBEDDING_MODEL)
     parser.add_argument("--top-k", type=int, default=20)
+    parser.add_argument(
+        "--num-papers",
+        type=int,
+        default=20,
+        help="Randomly sample this many eligible papers when --paper-title/--source-id is not provided.",
+    )
     parser.add_argument("--paper-title", help="Specify a paper by exact 主要篇名 instead of random sampling.")
     parser.add_argument("--source-id", help="Specify a paper by exact 來源文獻ID instead of random sampling.")
     parser.add_argument(
@@ -440,6 +794,30 @@ def main() -> None:
         default=COOCCUR_BONUS,
         help="Bonus per additional matched paper keyword when --score-mode soft_and is used.",
     )
+    parser.add_argument(
+        "--abstract-top-k",
+        type=int,
+        default=ABSTRACT_TOP_K,
+        help="Keep this many most similar articles per recommended author.",
+    )
+    parser.add_argument(
+        "--abstract-threshold",
+        type=float,
+        default=ABSTRACT_THRESHOLD,
+        help="Minimum target abstract -> recommended author article abstract similarity to keep as evidence.",
+    )
+    parser.add_argument(
+        "--abstract-batch-size",
+        type=int,
+        default=ABSTRACT_BATCH_SIZE,
+        help="Batch size for embedding recommended authors' article abstracts.",
+    )
+    parser.add_argument(
+        "--max-seq-length",
+        type=int,
+        default=MAX_SEQ_LENGTH,
+        help="Maximum token length for the sentence-transformers model.",
+    )
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--seed", type=int, help="Set a seed to make random sampling reproducible.")
     parser.add_argument(
@@ -463,19 +841,21 @@ def main() -> None:
     if not matches:
         raise SystemExit("找不到符合條件的文章。")
 
-    sampled = select_paper(
+    sampled_papers = select_papers(
         matches=matches,
         paper_title=args.paper_title,
         source_id=args.source_id,
+        count=args.num_papers,
     )
-    keyword_text = " | ".join(sampled["關鍵字清單"])
 
     print(f"F03 source titles: {len(f03_titles)}")
     print(f"Matched eligible articles: {len(matches)}")
-    print(f"Sampled title: {sampled['主要篇名']}")
-    print(f"Source ID: {sampled['來源文獻ID']}")
-    print(f"Paper authors: {(sampled.get('作者') or '').strip()}")
-    print(f"Keywords: {keyword_text}")
+    print(f"Selected papers: {len(sampled_papers)}")
+    for index, sampled in enumerate(sampled_papers, 1):
+        keyword_text = " | ".join(sampled["關鍵字清單"])
+        print(f"[{index}] {sampled['來源文獻ID']} | {sampled['主要篇名']}")
+        print(f"    Paper authors: {(sampled.get('作者') or '').strip()}")
+        print(f"    Keywords: {keyword_text}")
 
     if args.dry_run:
         print("Dry run only; embeddings were not created.")
@@ -485,14 +865,14 @@ def main() -> None:
     print(f"Authors with keywords: {len(authors)}")
     author_keywords, keyword_to_author_indexes = build_author_keyword_index(authors)
     print(f"Unique author keywords: {len(author_keywords)}")
+    articles = read_article_rows(args.articles_file)
+    identity_to_article_indexes = build_author_article_index(articles)
+    print(f"Articles with abstracts: {len(articles)}")
 
     embedding_model = load_embedding_model(args.model)
-    paper_keyword_vectors = create_embeddings(
-        embedding_model=embedding_model,
-        texts=sampled["關鍵字清單"],
-        batch_size=args.batch_size,
-        progress=False,
-    )
+    if args.max_seq_length:
+        embedding_model.max_seq_length = args.max_seq_length
+        print(f"Model max_seq_length: {embedding_model.max_seq_length}")
     author_keyword_vectors = load_or_create_keyword_embeddings(
         keywords=author_keywords,
         embedding_model=embedding_model,
@@ -501,76 +881,59 @@ def main() -> None:
         batch_size=args.batch_size,
     )
 
-    excluded_identities = set()
-    if not args.include_paper_authors:
-        excluded_identities = parse_author_identities(sampled.get("作者", ""))
-
-    matches_by_paper_keyword = find_similar_author_keywords(
-        paper_keywords=sampled["關鍵字清單"],
-        paper_vectors=paper_keyword_vectors,
-        author_keywords=author_keywords,
-        author_keyword_vectors=author_keyword_vectors,
-        keyword_top_k=args.keyword_top_k,
-        similarity_threshold=args.similarity_threshold,
-    )
-
-    recommendations = recommend_authors_from_keyword_matches(
-        authors=authors,
-        keyword_to_author_indexes=keyword_to_author_indexes,
-        matches_by_paper_keyword=matches_by_paper_keyword,
-        top_k=args.top_k,
-        excluded_identities=excluded_identities,
-        mode=args.score_mode,
-        cooccur_bonus=args.cooccur_bonus,
-    )
-
-    paper_keyword_embeddings = [
-        {
-            "keyword": keyword,
-            "embedding": vector_to_list(vector),
-        }
-        for keyword, vector in zip(sampled["關鍵字清單"], paper_keyword_vectors)
-    ]
-
-    output = {
-        "model": args.model,
-        "source_id": sampled["來源文獻ID"],
-        "title": sampled["主要篇名"],
-        "paper_authors": sampled.get("作者", ""),
-        "keywords": sampled["關鍵字清單"],
-        "embedding_dimension": int(paper_keyword_vectors.shape[1]),
-        "paper_keyword_embeddings": paper_keyword_embeddings,
-        "recommendation_settings": {
-            "keyword_top_k": args.keyword_top_k,
-            "similarity_threshold": args.similarity_threshold,
-            "score_mode": args.score_mode,
-            "cooccur_bonus": args.cooccur_bonus,
-            "include_paper_authors": args.include_paper_authors,
-        },
-        "paper_keyword_matches": matches_by_paper_keyword,
-        "recommendations": recommendations,
-    }
-
-    output_path = Path(args.output_file)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-
-    print(f"Embedding dimension: {int(paper_keyword_vectors.shape[1])}")
-    print(f"Top {len(recommendations)} recommended authors:")
-    for index, item in enumerate(recommendations, 1):
-        top_matches = item["matched_keywords"][:3]
-        match_preview = " | ".join(
-            f"{m['paper_keyword']}->{m['author_keyword']}({m['similarity']:.3f})"
-            for m in top_matches
-        ) or "-"
-        print(
-            f"{index}. {item['author']} "
-            f"(score={item['score']:.4f}, "
-            f"source_hits={item['source_keyword_hits']}, "
-            f"exact={item['exact_hits']}, similar={item['similar_hits']}, "
-            f"articles={item['article_count']}, matches={match_preview})"
+    results = []
+    for index, sampled in enumerate(sampled_papers, 1):
+        print(f"\nRunning paper {index}/{len(sampled_papers)}: {sampled['來源文獻ID']} {sampled['主要篇名']}")
+        result = recommend_for_paper(
+            sampled=sampled,
+            args=args,
+            authors=authors,
+            author_keywords=author_keywords,
+            keyword_to_author_indexes=keyword_to_author_indexes,
+            author_keyword_vectors=author_keyword_vectors,
+            embedding_model=embedding_model,
+            articles=articles,
+            identity_to_article_indexes=identity_to_article_indexes,
         )
-    print(f"Saved: {output_path}")
+        results.append(result)
+
+        print(f"Top {len(result['recommendations'])} recommended authors:")
+        for author_rank, item in enumerate(result["recommendations"], 1):
+            top_matches = item["matched_keywords"][:3]
+            match_preview = format_keyword_matches(top_matches, limit=3) or "-"
+            print(
+                f"  {author_rank}. {item['author']} "
+                f"(keyword_score={item['keyword_score']:.4f}, "
+                f"abstract_score={item['abstract_score']:.4f}, "
+                f"final_score={item['final_score']:.4f}, "
+                f"keyword_matches={match_preview})"
+            )
+
+    csv_rows = recommendation_csv_rows(results, abstract_columns=args.abstract_top_k)
+    write_recommendations_csv(args.output_file, csv_rows, abstract_columns=args.abstract_top_k)
+    print(f"\nSaved CSV: {args.output_file}")
+    print(f"CSV rows: {len(csv_rows)}")
+
+    if args.json_output_file:
+        json_output = {
+            "model": args.model,
+            "papers": results,
+            "row_count": len(csv_rows),
+            "paper_count": len(results),
+            "recommendations_per_paper": args.top_k,
+            "recommendation_settings": {
+                "keyword_top_k": args.keyword_top_k,
+                "similarity_threshold": args.similarity_threshold,
+                "score_mode": args.score_mode,
+                "cooccur_bonus": args.cooccur_bonus,
+                "include_paper_authors": args.include_paper_authors,
+                "abstract_top_k": args.abstract_top_k,
+                "abstract_threshold": args.abstract_threshold,
+            },
+        }
+        with open(args.json_output_file, "w", encoding="utf-8") as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=2)
+        print(f"Saved JSON: {args.json_output_file}")
 
 
 if __name__ == "__main__":
