@@ -96,7 +96,7 @@ python3 05_build_citation_graph.py
 
 輸出：`citation_graph.graphml`
 
-- **節點**：論文 ID，帶 `prefix` 屬性（F、E、T、G、S、A … ）
+- **節點**：論文 ID，帶 `prefix` 屬性（字母 + 前兩位數字，例如 `F03`、`E06`、`T28`）
 - **邊**：引用關係（一列 ref_pair = 一條邊）
 
 查詢範例：
@@ -105,7 +105,7 @@ python3 05_build_citation_graph.py
 import networkx as nx
 G = nx.read_graphml("citation_graph.graphml")
 
-# 找 5 步以內的相關論文
+# 找 5 hops 以內的相關論文
 reachable = nx.single_source_shortest_path_length(G, "F030053", cutoff=5)
 ```
 

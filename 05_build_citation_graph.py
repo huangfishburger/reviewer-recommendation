@@ -25,7 +25,7 @@ CITED_COL  = "經濟學門文獻ID"
 
 
 def id_prefix(paper_id: str) -> str:
-    m = re.match(r"^[A-Za-z]+", paper_id)
+    m = re.match(r"^[A-Za-z]+\d{0,2}", paper_id)
     return m.group() if m else "?"
 
 
