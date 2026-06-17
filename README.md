@@ -96,7 +96,7 @@ python3 05_build_citation_graph.py
 
 輸出：`citation_graph.graphml`
 
-- **節點**：論文 ID（F、E、T、G、S、A … 等各種 prefix），帶 `prefix` 屬性
+- **節點**：論文 ID，帶 `prefix` 屬性（F、E、T、G、S、A … ）
 - **邊**：引用關係（一列 ref_pair = 一條邊）
 
 查詢範例：
