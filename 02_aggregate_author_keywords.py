@@ -12,8 +12,7 @@ import csv
 from collections import defaultdict
 
 
-INPUT_FILE = "articles_updated.csv"   # use updated file if keywords were generated
-FALLBACK_FILE = "articles.csv"        # fall back if updated not yet ready
+INPUT_FILE = "articles_updated.csv" 
 OUTPUT_FILE = "author_keywords.csv"
 
 
@@ -71,7 +70,7 @@ def parse_keywords(kw_field: str) -> list[str]:
 
 def main():
     import os
-    src = INPUT_FILE if os.path.exists(INPUT_FILE) else FALLBACK_FILE
+    src = INPUT_FILE
     print(f"Reading {src}...", flush=True)
 
     # author_key → {zh, en_set, article_count, keywords_set}

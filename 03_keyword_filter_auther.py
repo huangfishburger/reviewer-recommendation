@@ -20,7 +20,7 @@ from pathlib import Path
 SOURCE_FILE = "source_paper.csv"
 ARTICLES_FILE = "articles_updated.csv"
 AUTHOR_KEYWORDS_FILE = "author_keywords.csv"
-OUTPUT_FILE = "20X20_author_recommendations.csv"
+OUTPUT_FILE = "40X10_author_recommendations.csv"
 JSON_OUTPUT_FILE = ""
 EMBEDDING_CACHE_FILE = "author_keyword_embeddings_cache.json"
 EMBEDDING_MODEL = "BAAI/bge-m3"

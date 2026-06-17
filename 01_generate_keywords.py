@@ -18,8 +18,8 @@ except ImportError:
     os.system(f"{sys.executable} -m pip install openai")
     from openai import OpenAI
 
-INPUT_FILE = "articles_updated.csv"
-OUTPUT_FILE = "articles_updated.csv"
+INPUT_FILE = "articles_keywords.csv"
+OUTPUT_FILE = "articles_keywords.csv"
 CHECKPOINT_FILE = "keywords_checkpoint.json"
 MODEL = "gpt-4o-mini"
 BATCH_SIZE = 5       # articles per API call
