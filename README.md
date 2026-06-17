@@ -81,7 +81,6 @@ python3 03_keyword_filter_auther.py --paper-title 台灣金融情勢與經濟預
 python3 04_select_reviewers.py
 ```
 
-輸入：`40X10_author_recommendations.csv`
 輸出：`reviewer_recommendations.json`
 
 ---
