@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Pick one or more eligible F03 source papers and recommend authors by keywords.
+Pick one or more eligible source papers and recommend authors by keywords.
 
 Criteria:
-1. source_paper.csv row has 來源文獻ID starting with F03
-2. articles_updated.csv has the same 主要篇名
-3. articles_updated.csv 主要摘要 and 關鍵字 are both non-empty
-4. Embed the sampled paper keywords and compare them with author keywords
+1. articles_keywords.csv 英文摘要 is non-empty
+2. articles_keywords.csv 英文關鍵字 is non-empty, falling back to 關鍵字 if needed
+3. Embed English keywords and compare them with author English keywords
 """
 
 import argparse
@@ -17,10 +16,9 @@ import random
 from pathlib import Path
 
 
-SOURCE_FILE = "source_paper.csv"
-ARTICLES_FILE = "articles_updated.csv"
+ARTICLES_FILE = "articles_keywords.csv"
 AUTHOR_KEYWORDS_FILE = "author_keywords.csv"
-OUTPUT_FILE = "40X10_author_recommendations.csv"
+OUTPUT_FILE = "prof_lin_recommend_by_sim2.csv"
 JSON_OUTPUT_FILE = ""
 EMBEDDING_CACHE_FILE = "author_keyword_embeddings_cache.json"
 EMBEDDING_MODEL = "BAAI/bge-m3"
@@ -31,6 +29,10 @@ ABSTRACT_TOP_K = 3
 ABSTRACT_THRESHOLD = 0.45
 ABSTRACT_BATCH_SIZE = 8
 MAX_SEQ_LENGTH = 512
+ENGLISH_KEYWORD_COLUMNS = ("英文關鍵字", "keyword")
+CHINESE_KEYWORD_COLUMN = "關鍵字"
+ENGLISH_ABSTRACT_COLUMN = "英文摘要"
+CHINESE_ABSTRACT_COLUMN = "主要摘要"
 
 
 def normalize_title(title: str) -> str:
@@ -43,6 +45,32 @@ def normalize_name(name: str) -> str:
 
 def parse_pipe_field(raw: str) -> list[str]:
     return [part.strip() for part in (raw or "").split("|") if part.strip()]
+
+
+def read_embedding_keywords(row: dict) -> list[str]:
+    """
+    Prefer English keywords for embedding. Fall back to Chinese keywords only
+    when the English keyword field is empty. Duplicate terms are removed while
+    preserving order.
+    """
+    english_keywords = []
+    for column in ENGLISH_KEYWORD_COLUMNS:
+        english_keywords.extend(parse_pipe_field(row.get(column, "")))
+
+    raw_keywords = english_keywords or parse_pipe_field(row.get(CHINESE_KEYWORD_COLUMN, ""))
+    keywords = []
+    seen = set()
+    for keyword in raw_keywords:
+        key = keyword.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        keywords.append(keyword)
+    return keywords
+
+
+def read_embedding_abstract(row: dict) -> str:
+    return (row.get(ENGLISH_ABSTRACT_COLUMN) or "").strip()
 
 
 def parse_author_identities(raw: str) -> set[str]:
@@ -66,27 +94,9 @@ def parse_author_identities(raw: str) -> set[str]:
     return identities
 
 
-def read_f03_source_titles(path: str) -> dict[str, list[str]]:
+def read_eligible_articles(path: str) -> list[dict]:
     """
-    Return title -> source ids for source papers whose 來源文獻ID starts with F03.
-    """
-    titles: dict[str, list[str]] = {}
-
-    with open(path, encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            source_id = (row.get("來源文獻ID") or "").strip()
-            title = normalize_title(row.get("主要篇名", ""))
-            if source_id.startswith("F03") and title:
-                titles.setdefault(title, []).append(source_id)
-
-    return titles
-
-
-def read_matching_articles(path: str, f03_titles: dict[str, list[str]]) -> list[dict]:
-    """
-    Return articles whose title appears in F03 source papers and whose
-    主要摘要 and 關鍵字 are non-empty.
+    Return articles whose English abstract and embedding keywords are non-empty.
     """
     matches = []
 
@@ -94,14 +104,15 @@ def read_matching_articles(path: str, f03_titles: dict[str, list[str]]) -> list[
         reader = csv.DictReader(f)
         for row in reader:
             title = normalize_title(row.get("主要篇名", ""))
-            abstract = (row.get("主要摘要") or "").strip()
-            keywords = (row.get("關鍵字") or "").strip()
+            article_id = (row.get("文獻ID") or "").strip()
+            abstract = read_embedding_abstract(row)
+            keywords = read_embedding_keywords(row)
 
-            if title in f03_titles and abstract and keywords:
+            if article_id and title and abstract and keywords:
                 row = dict(row)
-                row["來源文獻ID"] = "|".join(sorted(set(f03_titles[title])))
+                row["來源文獻ID"] = article_id
                 row["主要篇名"] = title
-                row["關鍵字清單"] = [kw.strip() for kw in keywords.split("|") if kw.strip()]
+                row["關鍵字清單"] = keywords
                 matches.append(row)
 
     return matches
@@ -115,7 +126,7 @@ def select_paper(matches: list[dict], paper_title: str | None, source_id: str | 
             if normalize_title(row.get("主要篇名", "")) == target_title
         ]
         if not title_matches:
-            raise SystemExit(f"找不到符合指定主要篇名的 F03 文章：{paper_title}")
+            raise SystemExit(f"找不到符合指定主要篇名的文章：{paper_title}")
         if len(title_matches) > 1:
             print(f"指定篇名找到 {len(title_matches)} 筆，使用第一筆。")
         return title_matches[0]
@@ -124,12 +135,12 @@ def select_paper(matches: list[dict], paper_title: str | None, source_id: str | 
         target_source_id = source_id.strip()
         source_matches = [
             row for row in matches
-            if target_source_id in parse_pipe_field(row.get("來源文獻ID", ""))
+            if target_source_id == (row.get("來源文獻ID") or "").strip()
         ]
         if not source_matches:
-            raise SystemExit(f"找不到符合指定來源文獻ID的 F03 文章：{source_id}")
+            raise SystemExit(f"找不到符合指定文獻ID的文章：{source_id}")
         if len(source_matches) > 1:
-            print(f"指定來源文獻ID找到 {len(source_matches)} 筆，使用第一筆。")
+            print(f"指定文獻ID找到 {len(source_matches)} 筆，使用第一筆。")
         return source_matches[0]
 
     return random.choice(matches)
@@ -139,10 +150,23 @@ def select_papers(
     matches: list[dict],
     paper_title: str | None,
     source_id: str | None,
+    author: str | None,
     count: int,
 ) -> list[dict]:
     if paper_title or source_id:
         return [select_paper(matches, paper_title, source_id)]
+
+    if author:
+        target_identities = parse_author_identities(author)
+        if not target_identities:
+            raise SystemExit("--author 不能是空值。")
+
+        matches = [
+            row for row in matches
+            if parse_author_identities(row.get("作者", "")) & target_identities
+        ]
+        if not matches:
+            raise SystemExit(f"找不到作者符合 {author} 的文章。")
 
     if count <= 0:
         raise SystemExit("--num-papers 必須大於 0。")
@@ -159,7 +183,7 @@ def read_author_keyword_rows(path: str) -> list[dict]:
     with open(path, encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            keywords = parse_pipe_field(row.get("關鍵字", ""))
+            keywords = read_embedding_keywords(row)
             if not keywords:
                 continue
 
@@ -201,7 +225,7 @@ def read_article_rows(path: str) -> list[dict]:
         reader = csv.DictReader(f)
         for row_index, row in enumerate(reader):
             title = normalize_title(row.get("主要篇名", ""))
-            abstract = (row.get("主要摘要") or "").strip()
+            abstract = read_embedding_abstract(row)
             author_field = (row.get("作者") or "").strip()
             if not title or not abstract or not author_field:
                 continue
@@ -212,7 +236,7 @@ def read_article_rows(path: str) -> list[dict]:
                 "english_title": (row.get("英文篇名") or "").strip(),
                 "authors": author_field,
                 "abstract": abstract,
-                "keywords": parse_pipe_field(row.get("關鍵字", "")),
+                "keywords": read_embedding_keywords(row),
                 "identities": parse_author_identities(author_field),
             })
 
@@ -637,7 +661,7 @@ def recommend_for_paper(
         identity_to_article_indexes=identity_to_article_indexes,
         embedding_model=embedding_model,
         target_title=sampled["主要篇名"],
-        target_abstract=(sampled.get("主要摘要") or "").strip(),
+        target_abstract=read_embedding_abstract(sampled),
         abstract_top_k=args.abstract_top_k,
         abstract_threshold=args.abstract_threshold,
         abstract_batch_size=args.abstract_batch_size,
@@ -647,7 +671,7 @@ def recommend_for_paper(
         "source_id": sampled["來源文獻ID"],
         "title": sampled["主要篇名"],
         "paper_authors": sampled.get("作者", ""),
-        "paper_abstract": (sampled.get("主要摘要") or "").strip(),
+        "paper_abstract": (sampled.get(CHINESE_ABSTRACT_COLUMN) or "").strip(),
         "keywords": sampled["關鍵字清單"],
         "recommendations": recommendations,
         "paper_keyword_matches": matches_by_paper_keyword,
@@ -748,9 +772,8 @@ def write_recommendations_csv(path: str, rows: list[dict], abstract_columns: int
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Filter F03 papers and recommend authors by keyword embeddings."
+        description="Filter papers and recommend authors by keyword embeddings."
     )
-    parser.add_argument("--source-file", default=SOURCE_FILE)
     parser.add_argument("--articles-file", default=ARTICLES_FILE)
     parser.add_argument("--author-file", default=AUTHOR_KEYWORDS_FILE)
     parser.add_argument("--output-file", default=OUTPUT_FILE)
@@ -766,10 +789,14 @@ def main() -> None:
         "--num-papers",
         type=int,
         default=20,
-        help="Randomly sample this many eligible papers when --paper-title/--source-id is not provided.",
+        help="Randomly sample this many eligible papers. Can be combined with --author.",
     )
     parser.add_argument("--paper-title", help="Specify a paper by exact 主要篇名 instead of random sampling.")
-    parser.add_argument("--source-id", help="Specify a paper by exact 來源文獻ID instead of random sampling.")
+    parser.add_argument("--source-id", help="Specify a paper by exact 文獻ID instead of random sampling.")
+    parser.add_argument(
+        "--author",
+        help="Randomly sample papers by this author. Matches Chinese or English names in the 作者 field.",
+    )
     parser.add_argument(
         "--keyword-top-k",
         type=int,
@@ -835,8 +862,7 @@ def main() -> None:
     if args.seed is not None:
         random.seed(args.seed)
 
-    f03_titles = read_f03_source_titles(args.source_file)
-    matches = read_matching_articles(args.articles_file, f03_titles)
+    matches = read_eligible_articles(args.articles_file)
 
     if not matches:
         raise SystemExit("找不到符合條件的文章。")
@@ -845,11 +871,13 @@ def main() -> None:
         matches=matches,
         paper_title=args.paper_title,
         source_id=args.source_id,
+        author=args.author,
         count=args.num_papers,
     )
 
-    print(f"F03 source titles: {len(f03_titles)}")
-    print(f"Matched eligible articles: {len(matches)}")
+    print(f"Eligible articles from {args.articles_file}: {len(matches)}")
+    if args.author and not (args.paper_title or args.source_id):
+        print(f"Author filter: {args.author}")
     print(f"Selected papers: {len(sampled_papers)}")
     for index, sampled in enumerate(sampled_papers, 1):
         keyword_text = " | ".join(sampled["關鍵字清單"])
