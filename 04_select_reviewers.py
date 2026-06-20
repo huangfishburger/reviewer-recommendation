@@ -11,6 +11,30 @@ sys.stdout.reconfigure(encoding="utf-8")
 load_dotenv()
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+INPUT_FILE = "prof_lin_recommend_with_graph_0.25.csv"
+OUTPUT_FILE = "prof_lin_reviewer_recommendations_0.25.json"
+
+
+def graph_summary(cand):
+    nearest_author = cand.get("nearest_paper_author", "")
+    graph_distance = cand.get("author_graph_distance", "")
+    graph_weight = cand.get("author_graph_weight", "")
+    graph_note = str(cand.get("graph_relation_note", "") or "")
+
+    if pd.isna(nearest_author) or not str(nearest_author).strip():
+        return "作者圖未找到明確關係。"
+
+    nearest_author = str(nearest_author).strip()
+    if graph_note.startswith("direct_weight="):
+        return f"與投稿作者「{nearest_author}」在作者圖中直接相連，關係權重 {graph_weight}。"
+    if str(graph_distance) in {"2", "2.0"}:
+        return f"與投稿作者「{nearest_author}」在作者圖中距離 2 hops。"
+    if str(graph_distance) in {"3", "3.0"}:
+        return f"與投稿作者「{nearest_author}」在作者圖中距離 3 hops。"
+    if graph_note == "same_author":
+        return f"與投稿作者「{nearest_author}」為同一作者，需排除或特別注意利益衝突。"
+    return f"與投稿作者「{nearest_author}」的作者圖關係：{graph_note}。"
+
 
 def build_prompt(paper, candidates):
     prompt = f"""請扮演資深學術評審。以下有一篇投稿論文，以及 {len(candidates)} 位候選審稿人的代表著作（編號 #1 到 #{len(candidates)}）。
@@ -33,6 +57,8 @@ def build_prompt(paper, candidates):
             abstract = cand[f'abstract_{j}_abstract']
             if pd.notna(title) and pd.notna(abstract):
                 prompt += f"  - {title}：{str(abstract)[:250]}\n"
+        if "combined_score" in cand.index:
+            prompt += f"  圖譜資訊：{graph_summary(cand)}\n"
 
     prompt += f"""
 【輸出格式】
@@ -66,19 +92,21 @@ def select_reviewers(paper, candidates):
 
 
 def main():
-    df = pd.read_csv("40X10_author_recommendations.csv")
+    df = pd.read_csv(INPUT_FILE)
+    score_column = "combined_score" if "combined_score" in df.columns else "final_score"
 
     output = {"papers": []}
 
     papers = df.groupby("source_id", sort=False)
+    total_papers = len(papers)
 
     for source_id, paper_group in papers:
         paper_info = paper_group.iloc[0]
 
-        # 取 final_score 前 10 名送給 LLM
-        top10 = paper_group.nlargest(10, "final_score")
+        # 取 graph rerank 後的前 10 名送給 LLM；沒有 combined_score 時退回 final_score
+        top10 = paper_group.nlargest(10, score_column)
 
-        print(f"[{paper_info['paper_rank']}/40] 處理：{paper_info['paper_title'][:30]}...")
+        print(f"[{len(output['papers']) + 1}/{total_papers}] 處理：{paper_info['paper_title'][:30]}...")
 
         try:
             reviewers_raw = select_reviewers(paper_info, top10)
@@ -96,7 +124,7 @@ def main():
                 reviewer_details.append({
                     "name": row["author"],
                     "english_name": row["english_name"],
-                    "final_score": round(float(row["final_score"]), 4),
+                    "final_score": round(float(row[score_column]), 4),
                     "reason": rev.get("reason", ""),
                 })
             else:
@@ -107,7 +135,7 @@ def main():
                     reviewer_details.append({
                         "name": row["author"],
                         "english_name": row["english_name"],
-                        "final_score": round(float(row["final_score"]), 4),
+                        "final_score": round(float(row[score_column]), 4),
                         "reason": rev.get("reason", ""),
                     })
                 else:
@@ -133,10 +161,10 @@ def main():
 
         time.sleep(0.5)  # 避免打太快
 
-    with open("reviewer_recommendations.json", "w", encoding="utf-8") as f:
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print("\n完成！結果已儲存至 reviewer_recommendations.json")
+    print(f"\n完成！結果已儲存至 {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

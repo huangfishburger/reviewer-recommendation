@@ -1,0 +1,256 @@
+{
+  "papers": [
+    {
+      "source_id": "F020258",
+      "paper_rank": 1,
+      "paper_title": "經濟學門學術期刊評比更新",
+      "paper_authors": "曹添旺=Tsaur, Tien-Wang|王泓仁=Wang, Hung-Jen|林明仁=Lin, Ming-Jen|陳宜廷=Chen, Yi-Ting|張俊仁=Chang, Juin-Jen|黃粲堯=Huang, Tsan-Yao",
+      "paper_abstract": "研究成果品質的判定，在高等教育與研究機構之學術表現評鑑，及內部人事聘用與升等上，都扮演著非常重要的角色。就經濟學門而言，期刊論文是最重要的研究成果出版形式，因此期刊品質的判定對經濟學門的發展十分重要。台灣過去幾年，已有不少針對國際期刊與本國期刊評比之論著，以及根據這些結果所計算出之學術單位表現。然而，相關研究發表至今，經濟學研究領域發生不少變動，也有許多新期刊快速興起；僅以SSCI資料庫收錄之經濟期刊而言，其收錄數也在近幾年從二百多種增加到三百多種。有鑑於此，本文爰採用文獻中新近提出的客觀量化排序方法、並參考傑出學者專家的意見，重新對當前的國際及國內經濟學期刊加以評比排序，俾供參考。",
+      "paper_keywords": "Journal ranking|Citation frequency|Impact factor",
+      "recommended_reviewers": [
+        {
+          "name": "郭炳伸",
+          "english_name": "Biing-Shen Kuo / Kuo, Biing-Shen",
+          "final_score": 1.0,
+          "reason": "郭炳伸的研究專注於台灣經濟學期刊的評比，與投稿論文的核心議題高度契合。他的著作《台灣經濟學期刊之再評比》直接涉及期刊評比方法，並引入獨立學者小組進行評估，這與投稿論文的更新評比方法相似。"
+        },
+        {
+          "name": "陳致綱",
+          "english_name": "Chen, Jhih-Gang / Chen, Tze-Gan",
+          "final_score": 0.9936,
+          "reason": "陳致綱在《台灣經濟學期刊之再評比》中探討了期刊評比的細節，這與投稿論文的主題直接相關。他的研究方法和對台灣經濟學術表現的分析，為投稿論文提供了重要的背景和參考依據。"
+        },
+        {
+          "name": "管中閔",
+          "english_name": "Chung-Ming Kuan / Kuan, Chung-Ming / Kuan, Chung-ming",
+          "final_score": 0.9499,
+          "reason": "管中閔的研究《經濟學術期刊的分等與台灣各經濟學系所的學術表現》提供了對學術機構和期刊評比的深入分析，這與投稿論文的目標一致。他的研究成果對於理解台灣經濟學術界的現狀和期刊評比的影響具有重要意義。"
+        }
+      ]
+    },
+    {
+      "source_id": "F020275",
+      "paper_rank": 2,
+      "paper_title": "身高對學生綜合分析能力的影響─以「台灣教育長期追蹤資料庫」為例",
+      "paper_authors": "林明仁=Lin, Ming-Jen|蔡欣純=Tsai, Hsin-Chun|丁心嵐=Ting, Hsin-Lan",
+      "paper_abstract": "本文探討身高對學生綜合分析能力的影響。以綜合分析能力做為認知能力的代表，OLS結果顯示身高與認知能力呈正相關，並排除身高是反映自尊、人際支配、健康、社團經驗、非認知能力等影響認知能力的假設。為修正可能因內生性問題導致的估計誤差，我們使用傾向分數法與「初經年齡」做為工具變數加以修正。我們發現女生初經年齡較早者青春期身高較高，其認知能力也較高。本文結果說明青春期的認知能力受到發育快慢的影響，越早進入青春期發育的青少年，認知能力越好。身高則是反映發育的時間點，因此可作為認知能力高低的代理變數。",
+      "paper_keywords": "Height|Cognitive ability|Instrumental variable|Menstruation|TEPS",
+      "recommended_reviewers": [
+        {
+          "name": "陳婉琪",
+          "english_name": "Chen, Wan-Chi / Chen, Wan-chi / Wan-Chi Chen",
+          "final_score": 0.5568,
+          "reason": "陳婉琪的研究專注於教育成就與性別差異，與本論文探討身高對認知能力的影響有相似的社會科學背景。她的著作《高中生選組行為的原因與結果》涉及性別、信念與能力發展，與本論文中性別與認知能力的關聯性探討相契合。"
+        },
+        {
+          "name": "陶宏麟",
+          "english_name": "Hung-Lin Tao / Hung-lin Tao / Tao, Hung-Lin / Tao, Hung-lin",
+          "final_score": 0.5068,
+          "reason": "陶宏麟的研究涉及教育與個人特質的關係，尤其是《大學多元入學是否對身材肥胖學生不利？》一文，探討了身材與教育機會的關聯，與本論文中身高與認知能力的關係有類似的研究主題，提供了相關的分析視角。"
+        },
+        {
+          "name": "莊奕琦",
+          "english_name": "Chuang, Yih-Chyi / Chuang, Yih-chyi / Yih-Chyi Chuang",
+          "final_score": 0.4402,
+          "reason": "莊奕琦的研究專注於教育與社會流動，尤其是《不同世代下之教育報酬與能力差異》一文，使用量化方法分析教育與能力的關係，與本論文使用的量化分析方法相似，能提供對研究方法的深入理解和建議。"
+        }
+      ]
+    },
+    {
+      "source_id": "F030132",
+      "paper_rank": 3,
+      "paper_title": "內部勞動市場中的升遷與工資",
+      "paper_authors": "林明仁=Lin, Ming-Jen",
+      "paper_abstract": "本文使用一家台灣服務業公司的10年人事資料，來檢測內部勞動市場的假主。首先我們直接利用該公司的工作職稱(job title)、權力階級(authority level)以及管理階級結構圖(hierarchical structure chart)定義層級。接著我們在計算昇遷矩陣之後發現，該公司在擴充與停滯的期間內，昇遷及降職的數率並沒有顯著的差異，而平均降職率則約在2%至8%左右。我們也發現薪資與層級爲正相關，但薪資重疊也存在於同一層級內與不同層級之間。另外，由於固定效果模型大幅的削弱了層級對薪資增幅的影響，顯示了天生能力與層級相關之外，也使得錦標賽理論(Tournament Theory)在本文資料中只能得到微弱的支持。在內部勞動民市場與外部勞動市場的互動方面，我們發現地薪資來說，年虛擬變數爲一粗顯著的解釋變數：在景氣較差時，薪資減少大約10%到18%左右。此外，外部勞動力則是透過層級較低的新進與離職的管道進入該公司，而內部員工擁有昇遷的優先權。整體證據顯示，內部勞動市場，傳統人力資本，以及景氣波動都會對個人的薪資造成影響。",
+      "paper_keywords": "Internal Labor Markets|Transition Matrix|Level|Wage",
+      "recommended_reviewers": [
+        {
+          "name": "陶宏麟",
+          "english_name": "Hung-Lin Tao / Hung-lin Tao / Tao, Hung-Lin / Tao, Hung-lin",
+          "final_score": 0.4957,
+          "reason": "陶宏麟的研究專注於台灣勞動市場的經濟因素，尤其是內部遷徙和性別職業隔離，與本論文探討的內部勞動市場和薪資結構有直接關聯。他的著作《臺灣勞動市場四十年的性別職業隔離與薪資差異》與本論文的薪資與層級分析相契合。"
+        },
+        {
+          "name": "黃芳玫",
+          "english_name": "Fung-Mey Huang / Huang, Fung-Mey",
+          "final_score": 0.74,
+          "reason": "黃芳玫的研究涉及台灣人力資本與薪資不均，這與本論文中對薪資與層級的分析有直接關聯。她的著作《臺灣人力資本與薪資不均之研究》提供了對薪資分配和人力資本的深入分析，與本論文的薪資重疊現象相符。"
+        },
+        {
+          "name": "管中閔",
+          "english_name": "Chung-Ming Kuan / Kuan, Chung-Ming / Kuan, Chung-ming",
+          "final_score": 0.4863,
+          "reason": "管中閔的研究涵蓋了勞動市場政策對薪資的影響，這與本論文中探討的內部勞動市場與外部市場的互動有關。他的著作《重探勞退新制暨相關福利給付政策對私部門勞工薪資的影響》提供了對政策變動如何影響薪資的見解，與本論文的景氣波動分析相呼應。"
+        }
+      ]
+    },
+    {
+      "source_id": "F030169",
+      "paper_rank": 4,
+      "paper_title": "失業真的會導致犯罪嗎？以台灣1978年至2003年縣市資料為例",
+      "paper_authors": "林明仁=Lin, Ming-Jen|劉仲偉=Liu, Chung-Wei",
+      "paper_abstract": "國外文獻一般認為失業率上升只會使財產犯罪增加(Levitt，2004)；然而幾乎所有回歸結果都未考慮內生性的問題(Piehl，1998)。本文首先簡單說明經濟理論如何預測失業與犯罪的關係，並討論同時性(simultaneity)如何對最小平方法(OLS)的估計造成偏誤。我們接著提出美元匯率、日圓匯率以及能源價格三者分別與製造業就業人口比例乘積作為失業率的工具變數，並從理論與弱工具變數測試(weak Ⅳ test)兩方面同時探討該組工具變數之有效性。在實證結果方面，雖然在最小平方法下失業率對各類犯罪影響幾乎都為正且顯著，但在兩階段最小平方法(2SLS)下，失業率只對財產犯罪(主要在其中的竊盜一項)有正的顯著影響，對暴力犯罪則無。且2SLS估計值皆大於OLS的結果。最後，過度認定測試(over identification test)的結果也從統計上支援這些工具變數的外生性。",
+      "paper_keywords": "unemployment|crime rates|instrumental variables",
+      "recommended_reviewers": [
+        {
+          "name": "劉孟奇",
+          "english_name": "Lio, Mon-Chi / Lio, Monchi / Mon-Chi Lio",
+          "final_score": 0.9325,
+          "reason": "劉孟奇的研究專注於犯罪率與經濟因素的關聯，特別是在台灣的縣市層級數據分析上。他的著作《所得分配不均與犯罪：台灣縣市動態追蹤資料分析》使用了類似的統計方法，與投稿論文中的犯罪與失業率分析具有高度相關性。"
+        },
+        {
+          "name": "盧敬植",
+          "english_name": "Lu, Ching-Chih",
+          "final_score": 0.4539,
+          "reason": "盧敬植的研究涵蓋了犯罪率與經濟因素的關係，並使用了縣市層級的數據分析。他的著作《資訊通信科技與犯罪率之實證研究》與投稿論文在方法論上有相似之處，特別是在使用OLS和固定效應模型方面。"
+        },
+        {
+          "name": "洪嘉瑜",
+          "english_name": "Hung, Chia-Yu",
+          "final_score": 0.6215,
+          "reason": "洪嘉瑜的研究涉及失業保險制度和失業期間的影響，與投稿論文中探討失業率對犯罪的影響有關聯。他的著作《台灣失業保險制度對失業期間的影響》提供了對失業問題的深入分析，對理解失業與犯罪的關係有幫助。"
+        }
+      ]
+    },
+    {
+      "source_id": "F030256",
+      "paper_rank": 5,
+      "paper_title": "乾淨用水對長期健康及教育成就的影響：以1909-1933年日治時期台灣的水道建設為例",
+      "paper_authors": "林明仁=Lin, Ming-Jen|賴建宇=Lai, Chien-Yu",
+      "paper_abstract": "本文以台灣日治時期水道建設為例，連結當時總督府統計與現代人口普查及中老年身心調查資料，研究出生時期乾淨用水取得機會的增加，是否與日後的教育、健康與婚姻狀況有正向關係。我們發現，在OLS估計下，出生時水栓供水戶數（每千人）對日後教育年數、完成某一階段學業（如國中畢業）、仍維持良好婚姻與降低老年患病的機率等變數皆有顯著的正向關係。為了解決OLS內生性偏誤的問題，我們也提出以前一年的營業稅與雜種稅作為水栓供水戶數（每千人）的工具變數的作法。兩階段迴歸估計顯示，水栓供水戶數（每千人）仍與教育、婚姻與健康有顯著的正向關係，且2SLS的估計值大於OLS估計結果。整體來說，本文結果顯示嬰幼兒時期乾淨用水的取得確有長期影響，亦對早期嬰幼兒干預政策的成本效益分析，提供了討論的基礎。",
+      "paper_keywords": "clean water provision|education level|elderly health|instrumental variable",
+      "recommended_reviewers": [
+        {
+          "name": "駱明慶",
+          "english_name": "Luoh, Ming-Ching / Luoh, Ming-ching / Ming-Ching Luoh",
+          "final_score": 0.5925,
+          "reason": "駱明慶在教育成就與社會背景的研究上有深入的研究積累，尤其是其著作《教育成就的省籍與性別差異》與本論文探討教育成就的影響因素高度相關。此外，他與投稿作者林明仁在作者圖中直接相連，顯示其在學術網絡中的重要性。"
+        },
+        {
+          "name": "莊奕琦",
+          "english_name": "Chuang, Yih-Chyi / Chuang, Yih-chyi / Yih-Chyi Chuang",
+          "final_score": 0.2387,
+          "reason": "莊奕琦的研究專注於教育成就與社會流動，尤其是其著作《影響敎育成就的因素及九年國民義務敎育政策效果評析：台灣實證》與本論文對教育成就的探討有直接關聯。他在教育政策效果分析方面的專業深度使其成為合適的審稿人選。"
+        },
+        {
+          "name": "黃毅志",
+          "english_name": "Huang, Yih-Jyh / Hwang, Yih-Jyh",
+          "final_score": 0.5875,
+          "reason": "黃毅志在社會資本與教育、健康的關係研究上有豐富的經驗，其著作《臺灣原住民居住地透過教育、職業、收入與社會支持對心理健康之影響》與本論文對健康與教育的長期影響的探討有相似之處。他的研究方法和視角能為本論文提供有價值的審視。"
+        }
+      ]
+    },
+    {
+      "source_id": "F03N000011",
+      "paper_rank": 6,
+      "paper_title": "論家戶所得與資產對子女教育之影響－以1993-1995出生世代及其父母稅務資料為例",
+      "paper_authors": "沈暉智=Hui-Chih Shen|林明仁=Ming-Jen Lin",
+      "paper_abstract": "本文探討親代所得與資產如何影響子代教育取得之機會。分析財稅資料中心2000-2015年之母體層級稅務資料，串連親代所得、資產及子代的就學資料後，發現家戶所得及資產與高等教育的就讀機會呈高度相關。台灣大學與公立學校的學生家戶年所得中位數分別超過150、100萬元，遠高於全體樣本中位數86萬元。進一步檢視各大專院校及學制的資產分佈，則凸顯不同學制間鉅額的財富差距及代際流動於教育管道的僵固。最後，各校每生平均教育經費支出與學生家戶所得組成間的正向關係，也凸顯了政府的教育經費補貼其實是反向重分配的事實。",
+      "paper_keywords": "intergeneration mobility|reversed income redistribution|family background|higher education",
+      "recommended_reviewers": [
+        {
+          "name": "駱明慶",
+          "english_name": "Luoh, Ming-Ching / Luoh, Ming-ching / Ming-Ching Luoh",
+          "final_score": 0.8524,
+          "reason": "駱明慶的研究專注於家庭背景對教育機會的影響，與投稿論文探討家戶所得與資產對子女教育的影響高度相關。他的著作《升學機會與家庭背景》直接探討了家庭背景對教育機會的影響，與投稿論文的核心議題相符。此外，他與投稿作者林明仁在作者圖中直接相連，顯示出他在該領域的深厚研究積累。"
+        },
+        {
+          "name": "張瀞云",
+          "english_name": "Chang, Jing Jun / Chang, Jing-Jun / Chang, Jing-jun",
+          "final_score": 0.7243,
+          "reason": "張瀞云的研究涉及高等教育政策對社會公平的影響，與投稿論文關注的教育機會不平等問題相契合。她的著作《台灣高等教育政策調整對社會公平面的影響》探討了教育政策對社會流動的影響，這與投稿論文中對教育經費分配的分析有直接關聯。她與投稿作者沈暉智在作者圖中距離僅2 hops，顯示出她在相關領域的研究深度。"
+        },
+        {
+          "name": "黃毅志",
+          "english_name": "Huang, Yih-Jyh / Hwang, Yih-Jyh",
+          "final_score": 0.74,
+          "reason": "黃毅志的研究涉及社會資本與教育的關係，與投稿論文中家戶資產對教育機會的影響有相似之處。他的著作《學科補習、社會資本、文化資本與高中多元入學關係之研究》分析了社會經濟背景對教育途徑的影響，這與投稿論文的主題密切相關。他與投稿作者沈暉智在作者圖中距離2 hops，顯示出其在該領域的持續研究積累。"
+        }
+      ]
+    },
+    {
+      "source_id": "F03N000013",
+      "paper_rank": 7,
+      "paper_title": "經濟學門學術期刊評比更新：2019年",
+      "paper_authors": "林明仁=Ming-Jen Lin|林常青=Chang-Ching Lin|張俊仁=Juin-Jen Chang|曹添旺=Tien-Wang Tsaur|楊浩彥=Hao-Yen Yang",
+      "paper_abstract": "本文延續曹添旺等（2013）《經濟論文》的研究，秉持客觀的量化分析與主觀的質化觀點並重的期刊排序分析原則。在考量快速變遷的國際期刊市場之下，針對快速崛起的重要期刊，給予適當的排序。同時，我們也將重新思考國內期刊對學界的重要性，並考量本土議題對台灣經濟及政策的影響，進一步給予國內期刊在期刊評比上新的地位。",
+      "paper_keywords": "journal ranking|citation frequency|impact factor",
+      "recommended_reviewers": [
+        {
+          "name": "王泓仁",
+          "english_name": "Wang, Hung-Jen / Wang, Hung-jen",
+          "final_score": 1.0,
+          "reason": "王泓仁的研究與本論文的核心議題高度相關，尤其是其著作《經濟學門學術期刊評比更新》，直接涉及期刊評比的更新方法。此外，他在學術評估方面的研究積累，顯示出其在此領域的專業深度。"
+        },
+        {
+          "name": "黃粲堯",
+          "english_name": "Huang, Tsan-Yao / Huang, Tsan-yao",
+          "final_score": 1.0,
+          "reason": "黃粲堯的研究主題與本論文高度契合，尤其是其著作《經濟學門學術期刊評比更新》，與本論文的研究方向相同。他在期刊評比和學術評估方面的持續研究，顯示出其專業深度。"
+        },
+        {
+          "name": "郭炳伸",
+          "english_name": "Biing-Shen Kuo / Kuo, Biing-Shen",
+          "final_score": 0.8637,
+          "reason": "郭炳伸的著作《台灣經濟學期刊之再評比》與本論文的期刊評比主題直接相關。他在台灣經濟學術期刊評比方面的研究積累，顯示出其在此領域的專業深度，並且與投稿作者有密切的學術聯繫。"
+        }
+      ]
+    },
+    {
+      "source_id": "F03N000028",
+      "paper_rank": 8,
+      "paper_title": "入學管道與學習表現",
+      "paper_authors": "李維倫=Wei-Lun Lee|古慧雯=Hui-Wen Koo|駱明慶=Ming-Ching Luoh|林明仁=Ming-Jen Lin",
+      "paper_abstract": "我們使用2007－14年間入學之台大學生的學籍資料、入學考試成績和在學成績，探討不同管道學生入學後的學業表現差異，並藉此評估多元入學政策在台大實施的成效。我們發現，以個人申請管道入學學生的學業成績雖然顯著優於透過指考入學的學生，但學測成績的差異即可解釋兩者入學後學業表現的大部分差異；控制學測成績後，申請生和指考生的學業成績並沒有顯著差異。而在轉系與退學的面向，申請、繁星生無論在轉系、成績因素退學和主動退學的比例，皆明顯低於指考生。在繁星計畫／繁星推薦方面，繁星生平均的學業表現優於申請生和指考生。這不只是來自明星高中繁星生的貢獻，非明星高中繁星生的學業表現平均而言也顯著高於指考生。然而如果只看來自2011－15年內無人以申請或指考進入台大的高中的繁星生，其學業成績則顯著低於指考生。此一差異也可以用學測成績的差異來解釋；控制學測成績後，這些繁星生和指考生的學業成績並沒有顯著差異。",
+      "paper_keywords": "multi-channel admission|college application|entrance exam|high school alma mater|college score",
+      "recommended_reviewers": [
+        {
+          "name": "陶宏麟",
+          "english_name": "Hung-Lin Tao / Hung-lin Tao / Tao, Hung-Lin / Tao, Hung-lin",
+          "final_score": 1.0,
+          "reason": "陶宏麟的研究專注於大學入學管道與學業表現，與本論文主題高度相關。他的著作《大學入學管道與學業表現－以北部某私立大學為例》直接探討了多元入學管道對學業表現的影響，與投稿論文的核心議題一致。"
+        },
+        {
+          "name": "田芳華",
+          "english_name": "Tien, Fang-Hua / Tien, Flora F.",
+          "final_score": 0.589,
+          "reason": "田芳華的研究涉及大學多元入學制度下不同入學管道的學生特性與學業成就比較，與本論文的研究方向高度契合。其著作《大學多元入學制度：學生家庭社經背景與學業成就之比較》探討了不同入學管道學生的學業成就，與投稿論文的核心問題相符。"
+        },
+        {
+          "name": "劉家樺",
+          "english_name": "Chia-Hua Liu / Chia-hua Liu / Liu, Chia-Hua",
+          "final_score": 0.5542,
+          "reason": "劉家樺的研究涵蓋多元入學方案對學業壓力及在校表現的影響，與本論文的研究方向相關。他的著作《2001年高中職和五專多元入學方案與入學後學校滿意度、學業壓力及在校表現之關係》探討了入學管道與學業表現的關係，與投稿論文的主題相符。"
+        }
+      ]
+    },
+    {
+      "source_id": "F03N000068",
+      "paper_rank": 9,
+      "paper_title": "Distributional National Accounts of Taiwan, 1981-2017",
+      "paper_authors": "Cyrus Chu=朱敬一|Chien-Yu Chen=陳建宇|Ming-Jen Lin=林明仁|Hsuan-Li Su=蘇軒立",
+      "paper_abstract": "We construct the pre-tax Distributional National Accounts (DINA) of Taiwan from 1981 to 2017 using survey data. Our DINA individual income series demonstrates a much larger inequality than previous results using tax tabulations and tax units. This difference is mainly due to a change in the unit of observation and the treatment of corporate retained earnings. We find that income inequality was stable in the 1980s and began to rise after the mid-1990s. After 2000, this trend further accelerated. We then estimate the distribution of economic growth. From 1981 to 2001, Taiwan experienced a period of rapid economic growth, with a growth rate of 7.32 percent annually and a fairly equal distribution of growth. From 2001 to 2017, the aggregate growth rate declined to 2.47 percent with a deteriorating distribution of growth. The increasing inequality in income and growth distribution is due to the combination of a worsening capital income distribution and rising retained earnings.",
+      "paper_keywords": "distributional national accounts|income inequality|pre-tax national income",
+      "recommended_reviewers": [
+        {
+          "name": "洪明皇",
+          "english_name": "Hong, Ming-Hwang / Ming-Hwang Hong",
+          "final_score": 0.9133,
+          "reason": "洪明皇的研究專注於台灣的收入不平等和所得分配，與投稿論文的核心議題高度相關。他的著作《台灣高所得者所得份額之變化：1977-2010》直接涉及所得不均的變化，與投稿論文對台灣收入不平等的分析相契合。"
+        },
+        {
+          "name": "韓幸紋",
+          "english_name": "HAN, HSING-WEN / Han, Hsing-Wen / Hsing-Wen Han",
+          "final_score": 0.6834,
+          "reason": "韓幸紋的研究涵蓋台灣的財富分配，尤其是利用財產登錄資料進行分析，這與投稿論文使用調查數據構建國民帳戶的做法類似。他的著作《台灣財富分配2004-2014：以個人財產登錄資料推估》與論文的數據分析方法相符。"
+        },
+        {
+          "name": "曾中信",
+          "english_name": "Chung-Hsin Tseng / Chung-hsin Tseng",
+          "final_score": 0.5291,
+          "reason": "曾中信的研究涉及台灣的財富分配和稅制公平性，與投稿論文中對資本收入分配惡化的討論有關聯。他的著作《台灣財富分配2004-2014：以個人財產登錄資料推估》提供了對台灣財富分配的深入分析，與論文的主題相呼應。"
+        }
+      ]
+    }
+  ]
+}
