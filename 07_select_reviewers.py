@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+import argparse
 import sys
 import pandas as pd
 import json
@@ -9,10 +11,17 @@ from dotenv import load_dotenv
 sys.stdout.reconfigure(encoding="utf-8")
 
 load_dotenv()
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-INPUT_FILE = "prof_lin_recommend_with_graph_0.25.csv"
-OUTPUT_FILE = "prof_lin_reviewer_recommendations_0.25.json"
+INPUT_FILE = "reviewer_candidates_reranked.csv"
+OUTPUT_FILE = "reviewer_recommendations.json"
+MODEL = "gpt-4o"
+
+
+def build_client():
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise SystemExit("OPENAI_API_KEY is missing. Put it in .env or export it before running 07_select_reviewers.py.")
+    return OpenAI(api_key=api_key)
 
 
 def graph_summary(cand):
@@ -77,11 +86,11 @@ def build_prompt(paper, candidates):
     return prompt
 
 
-def select_reviewers(paper, candidates):
+def select_reviewers(client, model, paper, candidates):
     prompt = build_prompt(paper, candidates)
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"},
         temperature=0.3,
@@ -92,7 +101,16 @@ def select_reviewers(paper, candidates):
 
 
 def main():
-    df = pd.read_csv(INPUT_FILE)
+    parser = argparse.ArgumentParser(
+        description="Use an OpenAI model to select final reviewers from reranked candidates."
+    )
+    parser.add_argument("input_file", nargs="?", default=INPUT_FILE)
+    parser.add_argument("output_file", nargs="?", default=OUTPUT_FILE)
+    parser.add_argument("--model", default=MODEL)
+    args = parser.parse_args()
+
+    client = build_client()
+    df = pd.read_csv(args.input_file)
     score_column = "combined_score" if "combined_score" in df.columns else "final_score"
 
     output = {"papers": []}
@@ -109,7 +127,7 @@ def main():
         print(f"[{len(output['papers']) + 1}/{total_papers}] 處理：{paper_info['paper_title'][:30]}...")
 
         try:
-            reviewers_raw = select_reviewers(paper_info, top10)
+            reviewers_raw = select_reviewers(client, args.model, paper_info, top10)
         except Exception as e:
             print(f"  !! API 錯誤：{e}")
             reviewers_raw = []
@@ -161,10 +179,10 @@ def main():
 
         time.sleep(0.5)  # 避免打太快
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+    with open(args.output_file, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print(f"\n完成！結果已儲存至 {OUTPUT_FILE}")
+    print(f"\n完成！結果已儲存至 {args.output_file}")
 
 
 if __name__ == "__main__":

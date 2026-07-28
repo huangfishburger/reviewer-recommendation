@@ -1,56 +1,56 @@
-# 03 關鍵字推薦作者 — 詳細說明
+# 05 關鍵字推薦作者 — 詳細說明
 
 ## 資料來源
 
-程式會讀三個 CSV：
+程式會讀兩個 CSV：
 
-- `source_paper.csv`：用來篩選來源文獻 ID，以 `F03` 開頭的 paper 才會進入候選。
-- `articles_updated.csv`：用 `主要篇名` 和 `source_paper.csv` 比對，且 `主要摘要`、`關鍵字` 都不能是空值。
+- `articles_keywords.csv`：論文資料，且摘要、可 embedding 的關鍵字都不能是空值。
 - `author_keywords.csv`：每位作者累積的關鍵字，用來建立作者推薦索引。
 
 符合條件的 paper 必須同時滿足：
 
-1. `source_paper.csv` 的 `來源文獻ID` 以 `F03` 開頭。
-2. `source_paper.csv` 的 `主要篇名` 能在 `articles_updated.csv` 找到同名文章。
-3. `articles_updated.csv` 裡該文章的 `主要摘要` 不為空。
-4. `articles_updated.csv` 裡該文章的 `關鍵字` 不為空。
+1. `articles_keywords.csv` 裡有 `文獻ID` 和 `主要篇名`。
+2. `英文摘要` 不為空；若沒有英文摘要，程式會退回使用 `主要摘要`。
+3. `英文關鍵字` 不為空；若沒有英文關鍵字，程式會退回使用 `關鍵字`。
+
+預設隨機抽樣會從 `文獻ID` 以 `F03` 開頭的 paper 抽 40 篇。這個限制只影響被推薦審稿人的投稿論文，不限制候選審稿人的作者資料範圍。
 
 ## 基本使用
 
 隨機抽 40 篇符合條件的 F03 paper，每篇推薦 10 位作者，輸出 CSV：
 
 ```bash
-python3 keyword_filter_auther.py
+python3 05_recommend_authors.py
 ```
 
 先檢查會抽到哪些 paper，但不產生 embedding：
 
 ```bash
-python3 keyword_filter_auther.py --dry-run --seed 42 --num-papers 40
+python3 05_recommend_authors.py --dry-run --seed 42 --num-papers 40
 ```
 
 指定某一篇 paper：
 
 ```bash
-python3 keyword_filter_auther.py --source-id F03N000029
+python3 05_recommend_authors.py --source-id F03N000029
 ```
 
 或用 `主要篇名` 指定：
 
 ```bash
-python3 keyword_filter_auther.py --paper-title 台灣金融情勢與經濟預測
+python3 05_recommend_authors.py --paper-title 台灣金融情勢與經濟預測
 ```
 
 調整最後推薦幾位作者：
 
 ```bash
-python3 keyword_filter_auther.py --source-id F03N000029 --top-k 10
+python3 05_recommend_authors.py --source-id F03N000029 --top-k 10
 ```
 
 調整一次隨機跑幾篇 paper：
 
 ```bash
-python3 keyword_filter_auther.py --num-papers 40 --top-k 10
+python3 05_recommend_authors.py --num-papers 40 --top-k 10
 ```
 
 ## Embedding Cache
@@ -115,7 +115,7 @@ score = 2.68
 
 作者推薦完成後，程式會再針對每位推薦作者找文章摘要 evidence：
 
-1. 從 `articles_updated.csv` 建立「作者 → 文章」索引。
+1. 從 `articles_keywords.csv` 建立「作者 → 文章」索引。
 2. 對每一篇目標 paper，先用 keyword 推薦出作者。
 3. 只收集這些已推薦作者的文章摘要，不會預先計算全部 7728 篇摘要。
 4. 計算目標 paper 摘要和該作者每篇文章摘要的 cosine similarity。
@@ -130,6 +130,7 @@ score = 2.68
 |------|------|------|
 | `--top-k` | 10 | 每篇論文推薦幾位作者 |
 | `--num-papers` | 40 | 隨機抽幾篇論文 |
+| `--random-id-prefix` | F03 | 只影響預設隨機抽樣；設成空字串可從全部論文抽 |
 | `--keyword-top-k` | 30 | 每個 paper keyword 保留幾個最相似的 author keyword |
 | `--similarity-threshold` | 0.55 | keyword 相似度門檻 |
 | `--score-mode` | soft_and | 分數聚合方式（soft_and / sum / avg / min） |
@@ -140,10 +141,9 @@ score = 2.68
 | `--max-seq-length` | 512 | embedding model 最大 token 長度 |
 | `--seed` | - | 固定隨機抽樣結果 |
 | `--include-paper-authors` | - | 允許推薦論文原作者 |
-| `--source-file` | source_paper.csv | 來源論文檔案 |
 | `--articles-file` | articles_keywords.csv | 論文資料檔案 |
 | `--author-file` | author_keywords.csv | 作者關鍵字檔案 |
-| `--output-file` | 40X10_author_recommendations.csv | 輸出 CSV 路徑 |
+| `--output-file` | reviewer_candidates.csv | 輸出 CSV 路徑 |
 | `--json-output-file` | - | 額外輸出 JSON（選填） |
 | `--model` | BAAI/bge-m3 | sentence-transformers 模型 |
 
@@ -175,5 +175,5 @@ CSV 每列代表一個 paper-author 推薦結果，主要欄位：
 若還想另外輸出 JSON，可以加：
 
 ```bash
-python3 keyword_filter_auther.py --json-output-file result.json
+python3 05_recommend_authors.py --json-output-file result.json
 ```

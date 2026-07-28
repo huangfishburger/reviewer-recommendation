@@ -6,6 +6,7 @@ Criteria:
 1. articles_keywords.csv 英文摘要 is non-empty
 2. articles_keywords.csv 英文關鍵字 is non-empty, falling back to 關鍵字 if needed
 3. Embed English keywords and compare them with author English keywords
+4. By default, random sampling only draws papers whose 文獻ID starts with F03
 """
 
 import argparse
@@ -18,10 +19,11 @@ from pathlib import Path
 
 ARTICLES_FILE = "articles_keywords.csv"
 AUTHOR_KEYWORDS_FILE = "author_keywords.csv"
-OUTPUT_FILE = "prof_lin_recommend_by_sim2.csv"
+OUTPUT_FILE = "reviewer_candidates.csv"
 JSON_OUTPUT_FILE = ""
 EMBEDDING_CACHE_FILE = "author_keyword_embeddings_cache.json"
 EMBEDDING_MODEL = "BAAI/bge-m3"
+DEFAULT_ID_PREFIX = "F03"
 KEYWORD_TOP_K = 30
 SIMILARITY_THRESHOLD = 0.55
 COOCCUR_BONUS = 0.2
@@ -96,10 +98,9 @@ def parse_author_identities(raw: str) -> set[str]:
 
 def read_eligible_articles(path: str) -> list[dict]:
     """
-    Return articles whose English abstract and embedding keywords are non-empty.
+    Return articles whose abstract and embedding keywords are non-empty.
     """
     matches = []
-
     with open(path, encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -152,6 +153,7 @@ def select_papers(
     source_id: str | None,
     author: str | None,
     count: int,
+    random_id_prefix: str,
 ) -> list[dict]:
     if paper_title or source_id:
         return [select_paper(matches, paper_title, source_id)]
@@ -167,6 +169,13 @@ def select_papers(
         ]
         if not matches:
             raise SystemExit(f"找不到作者符合 {author} 的文章。")
+    elif random_id_prefix:
+        matches = [
+            row for row in matches
+            if (row.get("來源文獻ID") or "").strip().startswith(random_id_prefix)
+        ]
+        if not matches:
+            raise SystemExit(f"找不到文獻ID開頭符合 {random_id_prefix} 的文章。")
 
     if count <= 0:
         raise SystemExit("--num-papers 必須大於 0。")
@@ -788,8 +797,13 @@ def main() -> None:
     parser.add_argument(
         "--num-papers",
         type=int,
-        default=20,
+        default=40,
         help="Randomly sample this many eligible papers. Can be combined with --author.",
+    )
+    parser.add_argument(
+        "--random-id-prefix",
+        default=DEFAULT_ID_PREFIX,
+        help="When randomly sampling without --author/--source-id/--paper-title, only sample papers whose 文獻ID starts with this prefix. Use an empty string to include all papers.",
     )
     parser.add_argument("--paper-title", help="Specify a paper by exact 主要篇名 instead of random sampling.")
     parser.add_argument("--source-id", help="Specify a paper by exact 文獻ID instead of random sampling.")
@@ -873,9 +887,12 @@ def main() -> None:
         source_id=args.source_id,
         author=args.author,
         count=args.num_papers,
+        random_id_prefix=args.random_id_prefix,
     )
 
     print(f"Eligible articles from {args.articles_file}: {len(matches)}")
+    if not (args.author or args.paper_title or args.source_id):
+        print(f"Random ID prefix filter: {args.random_id_prefix or '(all)'}")
     if args.author and not (args.paper_title or args.source_id):
         print(f"Author filter: {args.author}")
     print(f"Selected papers: {len(sampled_papers)}")

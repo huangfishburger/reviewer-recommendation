@@ -3,3 +3,6 @@ numpy
 pandas
 openpyxl
 faiss-cpu
+networkx
+openai
+python-dotenv
